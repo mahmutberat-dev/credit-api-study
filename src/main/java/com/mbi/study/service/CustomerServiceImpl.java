@@ -1,5 +1,6 @@
 package com.mbi.study.service;
 
+import com.mbi.study.controller.dto.CreateCustomerRequest;
 import com.mbi.study.repository.CustomerRepository;
 import com.mbi.study.repository.entity.Customer;
 import jakarta.persistence.EntityNotFoundException;
@@ -16,6 +17,17 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Customer getById(Long customerId) {
-        return customerRepository.findById(customerId).orElseThrow(() -> new EntityNotFoundException(String.format("No any customer found with customerId: %d", customerId)));
+        return customerRepository.findById(customerId)
+                .orElseThrow(() -> new EntityNotFoundException(String.format("No any customer found with customerId: %d", customerId)));
+    }
+
+    @Override
+    public Customer create(CreateCustomerRequest createCustomerRequest) {
+        Customer customer = Customer.builder()
+                .name(createCustomerRequest.getName())
+                .surname(createCustomerRequest.getSurname())
+                .creditLimit(createCustomerRequest.getCreditLimit())
+                .build();
+        return customerRepository.save(customer);
     }
 }
