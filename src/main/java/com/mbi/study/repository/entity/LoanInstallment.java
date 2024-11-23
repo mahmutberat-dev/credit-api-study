@@ -1,0 +1,33 @@
+package com.mbi.study.repository.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.util.Date;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class LoanInstallment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "loan_installment_id_seq")
+    @Column(name = "id", updatable = false, nullable = false)
+    private Long id;
+
+    @ManyToOne
+    private Loan loan;
+
+    private BigDecimal amount;
+
+    private BigDecimal paidAmount;
+
+    private Date dueDate;
+
+    private Date paymentDate;
+
+    private boolean isPaid;
+}

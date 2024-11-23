@@ -1,10 +1,7 @@
 package com.mbi.study.controller;
 
-import com.mbi.study.controller.dto.CreateCreditLoanRequest;
-import com.mbi.study.controller.dto.GetAllCustomerLoanRequest;
-import com.mbi.study.controller.dto.LoanInstallmentResponse;
-import com.mbi.study.controller.dto.LoanResponse;
-import com.mbi.study.service.CreditLoanService;
+import com.mbi.study.controller.dto.*;
+import com.mbi.study.service.LoanService;
 import com.mbi.study.service.LoanInstallmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,23 +14,22 @@ import java.util.List;
 @RequestMapping("/loan")
 public class CreditLoanController {
 
-    private final CreditLoanService creditLoanService;
+    private final LoanService loanService;
     private final LoanInstallmentService loanInstallmentService;
 
     @PostMapping
-    public boolean createLoan(@Valid @RequestBody CreateCreditLoanRequest createCreditLoanRequest) {
-        creditLoanService.create(createCreditLoanRequest);
-        return true;
+    public CreateLoanResponse createLoan(@Valid @RequestBody CreateCreditLoanRequest createCreditLoanRequest) {
+        return loanService.create(createCreditLoanRequest);
     }
 
     @GetMapping()
     public List<LoanResponse> getCustomerLoans(GetAllCustomerLoanRequest allCustomerLoanRequest) {
-        return creditLoanService.getLoans(allCustomerLoanRequest);
+        return loanService.getLoans(allCustomerLoanRequest);
     }
 
     @GetMapping("/{loanId}")
     public LoanResponse getCustomerLoans(@PathVariable Long loanId) {
-        return creditLoanService.getLoanById(loanId);
+        return loanService.getLoanById(loanId);
     }
 
     @GetMapping("/{loanId}/installment")

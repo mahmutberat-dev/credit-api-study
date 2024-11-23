@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -29,8 +30,15 @@ public class CustomerServiceImpl implements CustomerService {
                 .name(createCustomerRequest.getName())
                 .surname(createCustomerRequest.getSurname())
                 .creditLimit(createCustomerRequest.getCreditLimit())
+                .usedCreditLimit(BigDecimal.ZERO)
                 .loans(List.of())
                 .build();
+        return customerRepository.save(customer);
+    }
+
+    @Override
+    public Customer updateUsedCreditLimit(Customer customer, BigDecimal totalLoanAmount) {
+        customer.addUserCreditLimit(totalLoanAmount);
         return customerRepository.save(customer);
     }
 }

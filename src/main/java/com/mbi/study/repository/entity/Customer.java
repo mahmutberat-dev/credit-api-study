@@ -31,6 +31,11 @@ public class Customer extends BaseEntity {
     private List<Loan> loans;
 
     public boolean hasEnoughLimit(BigDecimal newCreditAmount) {
-        return newCreditAmount.compareTo(creditLimit) <= 0;
+        return newCreditAmount.add(usedCreditLimit).compareTo(creditLimit) <= 0;
+    }
+
+    public void addUserCreditLimit(BigDecimal totalLoanAmount) {
+        BigDecimal newUsedLimit = getUsedCreditLimit().add(totalLoanAmount);
+        setUsedCreditLimit(newUsedLimit);
     }
 }
