@@ -6,7 +6,6 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 
 import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -15,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Loan {
+public class Loan extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "loan_id_seq")
     @Column(name = "id", updatable = false, nullable = false)
@@ -32,8 +31,6 @@ public class Loan {
     private BigDecimal loanAmount;
 
     private int numberOfInstallment;
-
-    private Date createDate;
 
     private boolean isPaid;
 }

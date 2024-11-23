@@ -1,8 +1,14 @@
 package com.mbi.study.controller.dto;
 
-import lombok.Data;
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.List;
 
-@Data
-public class LoanResponse {
-    private Long loanId;
+public record LoanResponse(Long loanId,
+                           long customerId,
+                           List<LoanInstallmentResponse> installments,
+                           BigDecimal loanAmount,
+                           int numberOfInstallment,
+                           Date createdDate,
+                           boolean isPaid) {
 }

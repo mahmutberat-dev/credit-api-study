@@ -39,7 +39,7 @@ class LoanServiceImplTest {
         Customer customer = new Customer();
         customer.setId(1001L);
         customer.setCreditLimit(BigDecimal.valueOf(100_000));
-        customer.setUsedCreditLimit(null);
+        customer.setUsedCreditLimit(BigDecimal.ZERO);
 
         when(customerService.getById(createCreditLoanRequest.getCustomerId())).thenReturn(customer);
 
@@ -52,6 +52,8 @@ class LoanServiceImplTest {
         assertEquals(BigDecimal.valueOf(110_000.0), captorValue.getLoanAmount());
         assertEquals(12, captorValue.getNumberOfInstallment());
         assertEquals(12, captorValue.getInstallments().size());
+
+        verify(customerService).updateUsedCreditLimit(customer, BigDecimal.valueOf(110_000.0));
 
         assertEquals(BigDecimal.valueOf(9_166.67), loanResponse.getMonthlyInstallmentAmount());
         assertEquals(BigDecimal.valueOf(110_000.0), loanResponse.getTotalPayment());

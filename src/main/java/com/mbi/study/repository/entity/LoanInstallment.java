@@ -12,7 +12,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LoanInstallment {
+public class LoanInstallment extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "loan_installment_id_seq")
     @Column(name = "id", updatable = false, nullable = false)
