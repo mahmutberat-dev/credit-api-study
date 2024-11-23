@@ -1,11 +1,10 @@
 package com.mbi.study.repository.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Getter
@@ -13,9 +12,10 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Customer {
+public class Customer extends BaseEntity {
     @Id
-    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_id_seq")
+    @Column(name = "id", updatable = false, nullable = false)
     private Long id;
 
     @Column(name = "name")
@@ -26,6 +26,9 @@ public class Customer {
     private BigDecimal creditLimit;
     @Column(name = "used_credit_limit")
     private BigDecimal usedCreditLimit;
+
+    @OneToMany(mappedBy = "customer")
+    private List<Loan> loans;
 
     public boolean hasEnoughLimit(BigDecimal newCreditAmount) {
         return newCreditAmount.compareTo(creditLimit) <= 0;

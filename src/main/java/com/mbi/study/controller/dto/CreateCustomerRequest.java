@@ -1,6 +1,7 @@
 package com.mbi.study.controller.dto;
 
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -11,6 +12,6 @@ public class CreateCustomerRequest {
     private final String name;
     @NotEmpty
     private final String surname;
-    @NotEmpty
+    @NotNull
     private final BigDecimal creditLimit;
 }

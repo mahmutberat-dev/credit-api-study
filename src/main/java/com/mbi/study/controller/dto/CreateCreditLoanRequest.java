@@ -1,6 +1,6 @@
 package com.mbi.study.controller.dto;
 
-import com.mbi.study.validation.OneOf;
+import com.mbi.study.common.validation.OneOf;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 

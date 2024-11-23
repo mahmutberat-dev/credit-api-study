@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -27,6 +29,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .name(createCustomerRequest.getName())
                 .surname(createCustomerRequest.getSurname())
                 .creditLimit(createCustomerRequest.getCreditLimit())
+                .loans(List.of())
                 .build();
         return customerRepository.save(customer);
     }
