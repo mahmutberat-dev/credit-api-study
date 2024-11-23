@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring", uses = {CustomerMapper.class, LoanMapper.class})
 public interface LoanInstallmentMapper {
 
-    @Mapping(target = "loanId", source = "entity.loan.id")
-    @Mapping(target = "nextPaymentDate", source = "entity.dueDate")
-    LoanInstallmentResponse fromLoanInstallment(LoanInstallment entity);
+    @Mapping(target = "loanId", source = "loanInstallment.loan.id")
+    @Mapping(target = "nextPaymentDate", source = "loanInstallment.dueDate")
+    LoanInstallmentResponse fromLoanInstallment(LoanInstallment loanInstallment);
 }
