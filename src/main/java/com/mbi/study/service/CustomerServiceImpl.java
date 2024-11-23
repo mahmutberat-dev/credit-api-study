@@ -41,4 +41,10 @@ public class CustomerServiceImpl implements CustomerService {
         customer.addUserCreditLimit(totalLoanAmount);
         return customerRepository.save(customer);
     }
+
+    @Override
+    public Customer freeUsedCreditLimit(Customer customer, BigDecimal totalLoanAmount) {
+        customer.addUserCreditLimit(totalLoanAmount);
+        return customerRepository.save(customer);
+    }
 }

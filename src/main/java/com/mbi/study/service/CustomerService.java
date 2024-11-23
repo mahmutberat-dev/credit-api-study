@@ -11,4 +11,5 @@ public interface CustomerService {
     Customer create(CreateCustomerRequest createCustomerRequest);
 
     Customer updateUsedCreditLimit(Customer customer, BigDecimal totalLoanAmount);
+    Customer freeUsedCreditLimit(Customer customer, BigDecimal totalLoanAmount);
 }

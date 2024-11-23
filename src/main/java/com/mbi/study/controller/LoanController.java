@@ -12,7 +12,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/loan")
-public class CreditLoanController {
+public class LoanController {
 
     private final LoanService loanService;
     private final LoanInstallmentService loanInstallmentService;
@@ -20,6 +20,11 @@ public class CreditLoanController {
     @PostMapping
     public CreateLoanResponse createLoan(@Valid @RequestBody CreateCreditLoanRequest createCreditLoanRequest) {
         return loanService.create(createCreditLoanRequest);
+    }
+
+    @PutMapping
+    public PayLoanResponse payLoan(@Valid @RequestBody PayLoanRequest payLoanRequest) {
+        return loanService.payLoan(payLoanRequest);
     }
 
     @GetMapping()

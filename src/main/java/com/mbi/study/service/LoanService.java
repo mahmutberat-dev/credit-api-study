@@ -1,9 +1,7 @@
 package com.mbi.study.service;
 
-import com.mbi.study.controller.dto.CreateCreditLoanRequest;
-import com.mbi.study.controller.dto.CreateLoanResponse;
-import com.mbi.study.controller.dto.GetAllCustomerLoanRequest;
-import com.mbi.study.controller.dto.LoanResponse;
+import com.mbi.study.controller.dto.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -13,4 +11,6 @@ public interface LoanService {
     List<LoanResponse> getLoans(GetAllCustomerLoanRequest allCustomerLoanRequest);
 
     LoanResponse getLoanById(Long loanId);
+
+    PayLoanResponse payLoan(@Valid PayLoanRequest payLoanRequest);
 }

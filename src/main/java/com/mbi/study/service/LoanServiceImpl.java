@@ -1,11 +1,9 @@
 package com.mbi.study.service;
 
-import com.mbi.study.controller.dto.CreateCreditLoanRequest;
-import com.mbi.study.controller.dto.CreateLoanResponse;
-import com.mbi.study.controller.dto.GetAllCustomerLoanRequest;
-import com.mbi.study.controller.dto.LoanResponse;
 import com.mbi.study.common.exception.CustomerNotEnoughLimitForLoanException;
 import com.mbi.study.common.mapper.LoanMapper;
+import com.mbi.study.controller.dto.*;
+import com.mbi.study.repository.LoanInstallmentRepository;
 import com.mbi.study.repository.LoanRepository;
 import com.mbi.study.repository.entity.Customer;
 import com.mbi.study.repository.entity.Loan;
@@ -18,10 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.*;
+import java.time.Instant;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -29,13 +30,13 @@ import java.util.List;
 public class LoanServiceImpl implements LoanService {
     private final CustomerService customerService;
     private final LoanRepository loanRepository;
+    private final LoanInstallmentRepository loanInstallmentRepository;
     private final LoanMapper loanMapper;
 
     @Override
     @Transactional
     public CreateLoanResponse create(CreateCreditLoanRequest createCreditLoanRequest) {
-        Long customerId = createCreditLoanRequest.getCustomerId();
-        Customer customer = customerService.getById(customerId);
+        Customer customer = customerService.getById(createCreditLoanRequest.getCustomerId());
         if (!customer.hasEnoughLimit(createCreditLoanRequest.getAmount())) {
             throw new CustomerNotEnoughLimitForLoanException("Cannot create loan since user does not has enough limit");
         }
@@ -51,13 +52,13 @@ public class LoanServiceImpl implements LoanService {
         List<LoanInstallment> installments = createInstallments(loan, totalLoanAmount, createCreditLoanRequest);
         loan.setInstallments(installments);
         loan.setNumberOfInstallment(installments.size());
-        loanRepository.save(loan);
+        Loan savedLoan = saveLoan(loan);
 
         customerService.updateUsedCreditLimit(customer, totalLoanAmount);
 
         BigDecimal monthlyInstallmentAmount = installments.stream().findAny().map(LoanInstallment::getAmount).orElse(BigDecimal.ZERO);
 
-        return new CreateLoanResponse(monthlyInstallmentAmount, totalLoanAmount, totalLoanAmount.subtract(createCreditLoanRequest.getAmount()));
+        return new CreateLoanResponse(savedLoan.getId(), monthlyInstallmentAmount, totalLoanAmount, totalLoanAmount.subtract(createCreditLoanRequest.getAmount()));
     }
 
     private static BigDecimal calculateMonthlyPaymentAmount(CreateCreditLoanRequest createCreditLoanRequest, BigDecimal totalLoanAmount) {
@@ -97,9 +98,75 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public LoanResponse getLoanById(Long loanId) {
-        return loanRepository.findById(loanId)
+        return Optional.of(getById(loanId))
                 .map(loanMapper::toLoanResponse)
                 .orElseThrow(EntityNotFoundException::new);
+    }
+
+    private Loan getById(Long loanId) {
+        return loanRepository.findById(loanId).orElseThrow(EntityNotFoundException::new);
+    }
+
+    @Override
+    public PayLoanResponse payLoan(PayLoanRequest payLoanRequest) {
+        Customer customer = customerService.getById(payLoanRequest.getCustomerId());
+        Loan loan = getById(payLoanRequest.getLoanId());
+
+        validateLoanPayment(loan, customer);
+
+        BigDecimal monthlyInstallmentAmount = loan.getInstallments().stream().findAny().map(LoanInstallment::getAmount).orElse(BigDecimal.ZERO);
+        int validateLoanFactor = validateLoanAmount(payLoanRequest, monthlyInstallmentAmount);
+
+        List<LoanInstallment> loanInstallments = payInstallments(loan, validateLoanFactor);
+
+        if (isAllLoanInstallmentsArePaid(loanInstallments)) {
+            loan.setPaid(true);
+            saveLoan(loan);
+            // customerService.freeUsedCreditLimit(customer, loan.getLoanAmount()); // TODO shall the usedCreditLimit be updated?
+        }
+        return new PayLoanResponse(validateLoanFactor, monthlyInstallmentAmount.multiply(BigDecimal.valueOf(validateLoanFactor)), loan.isPaid());
+    }
+
+    private Loan saveLoan(Loan loan) {
+        return loanRepository.save(loan);
+    }
+
+    private List<LoanInstallment> payInstallments(Loan loan, int validateLoanFactor) {
+        List<LoanInstallment> loanInstallments = loan.getInstallments().stream()
+                .filter(loanInstallment -> !loanInstallment.isPaid()).toList();
+
+        for (int installmentIndex = 0; installmentIndex < validateLoanFactor; installmentIndex++) {
+            if (installmentIndex < loanInstallments.size()) {
+                LoanInstallment loanInstallment = loanInstallments.get(installmentIndex);
+                loanInstallment.setPaid(true);
+                loanInstallment.setPaymentDate(Date.from(Instant.now()));
+                loanInstallment.setPaidAmount(loanInstallment.getAmount());
+                loanInstallmentRepository.save(loanInstallment);
+            }
+        }
+        return loanInstallments;
+    }
+
+    private void validateLoanPayment(Loan loan, Customer customer) {
+        if (loan.isPaid()) {
+            throw new IllegalStateException(String.format("The Loan is already paid. Loan Id: %d", loan.getId()));
+        }
+        if (!loan.getCustomer().getId().equals(customer.getId())) {
+            throw new IllegalStateException(String.format("Cannot pay loan. Loan owner id: %s is not matched with requested user id: %s", loan.getCustomer().getId(), customer.getId()));
+        }
+    }
+
+    private boolean isAllLoanInstallmentsArePaid(List<LoanInstallment> loanInstallments) {
+        return loanInstallments.stream().filter(loanInstallment -> !loanInstallment.isPaid()).findAny().isEmpty();
+    }
+
+    private int validateLoanAmount(PayLoanRequest payLoanRequest, BigDecimal monthlyInstallmentAmount) {
+        BigDecimal amountBigDecimal = BigDecimal.valueOf(payLoanRequest.getAmount());
+        int amountFactor = amountBigDecimal.divide(monthlyInstallmentAmount, 2, RoundingMode.FLOOR).intValue();
+        if (amountFactor <= 0 || amountFactor > 3) {
+            throw new IllegalArgumentException("Loan pay amount is less than a single installment amount or more than 3 times of a single installment amount");
+        }
+        return amountFactor;
     }
 
     private BigDecimal calculateTotalLoanAmount(CreateCreditLoanRequest createCreditLoanRequest) {
