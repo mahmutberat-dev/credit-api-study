@@ -9,6 +9,7 @@ import com.mbi.study.repository.LoanRepository;
 import com.mbi.study.repository.entity.Customer;
 import com.mbi.study.repository.entity.Loan;
 import com.mbi.study.repository.entity.LoanInstallment;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,6 +20,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +41,14 @@ class LoanServiceImplTest {
     private LoanInstallmentRepository loanInstallmentRepository;
     @InjectMocks
     private LoanServiceImpl creditLoanService;
+    private final Customer customer = new Customer();
+
+    @BeforeEach
+    void setUp() {
+        customer.setId(1001L);
+        customer.setCreditLimit(BigDecimal.valueOf(100_000));
+        customer.setUsedCreditLimit(BigDecimal.ZERO);
+    }
 
     @Test
     void shouldCreateLoan() {
@@ -45,11 +57,6 @@ class LoanServiceImplTest {
         createCreditLoanRequest.setAmount(BigDecimal.valueOf(100_000));
         createCreditLoanRequest.setNumberOfInstallments(12);
         createCreditLoanRequest.setInterestRate(0.1);
-
-        Customer customer = new Customer();
-        customer.setId(1001L);
-        customer.setCreditLimit(BigDecimal.valueOf(100_000));
-        customer.setUsedCreditLimit(BigDecimal.ZERO);
 
         when(customerService.getById(createCreditLoanRequest.getCustomerId())).thenReturn(customer);
         when(loanRepository.save(any())).thenAnswer(argument -> {
@@ -84,9 +91,6 @@ class LoanServiceImplTest {
         payLoanRequest.setAmount(amount);
         payLoanRequest.setCustomerId(1001L);
 
-        Customer customer = new Customer();
-        customer.setId(1001L);
-
         Loan loan = new Loan();
         loan.setId(3001L);
         loan.setCustomer(customer);
@@ -106,7 +110,7 @@ class LoanServiceImplTest {
 
         assertFalse(payLoanResponse.isLoanPaid());
         assertEquals(1, payLoanResponse.installmentsPaid());
-        assertTrue(BigDecimal.valueOf(2500).compareTo(payLoanResponse.amountPaid()) == 0);
+        assertEquals(0, BigDecimal.valueOf(2500).compareTo(payLoanResponse.amountPaid()));
 
         verify(loanRepository, never()).save(any());
 
@@ -114,9 +118,73 @@ class LoanServiceImplTest {
         verify(loanInstallmentRepository).save(loanInstallmentArgumentCaptor.capture());
         LoanInstallment savedLoanInstallment = loanInstallmentArgumentCaptor.getValue();
         assertEquals(1, savedLoanInstallment.getId());
-        assertTrue(BigDecimal.valueOf(2500).compareTo(savedLoanInstallment.getPaidAmount()) == 0);
+        assertEquals(0, BigDecimal.valueOf(2500).compareTo(savedLoanInstallment.getPaidAmount()));
         assertNotNull(savedLoanInstallment.getPaymentDate());
         assertTrue(savedLoanInstallment.isPaid());
+    }
+
+    @Test
+    void shouldPayRewardedLoanInstallment() {
+        double monthlyInstallmentAmount = 2500;
+        PayLoanRequest payLoanRequest = new PayLoanRequest();
+        payLoanRequest.setLoanId(5001L);
+        payLoanRequest.setAmount(monthlyInstallmentAmount);
+        payLoanRequest.setCustomerId(1001L);
+
+        Loan loan = new Loan();
+        loan.setId(3001L);
+        loan.setCustomer(customer);
+        LoanInstallment loanInstallment1 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 1);
+        loanInstallment1.setDueDate(Date.from(Instant.now().plus(1, ChronoUnit.DAYS)));
+
+        LoanInstallment loanInstallment2 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 2);
+        LoanInstallment loanInstallment3 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 3);
+        LoanInstallment loanInstallment4 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 4);
+        LoanInstallment loanInstallment5 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 5);
+        LoanInstallment loanInstallment6 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 6);
+
+        loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
+
+        when(customerService.getById(payLoanRequest.getCustomerId())).thenReturn(customer);
+        when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
+
+        PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
+
+        assertFalse(payLoanResponse.isLoanPaid());
+        assertEquals(1, payLoanResponse.installmentsPaid());
+        assertEquals(0, BigDecimal.valueOf(2497.50).compareTo(payLoanResponse.amountPaid()));
+    }
+
+    @Test
+    void shouldPayPenaltyLoanInstallment() {
+        double monthlyInstallmentAmount = 2500;
+        PayLoanRequest payLoanRequest = new PayLoanRequest();
+        payLoanRequest.setLoanId(5001L);
+        payLoanRequest.setAmount(monthlyInstallmentAmount);
+        payLoanRequest.setCustomerId(1001L);
+
+        Loan loan = new Loan();
+        loan.setId(3001L);
+        loan.setCustomer(customer);
+        LoanInstallment loanInstallment1 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 1);
+        loanInstallment1.setDueDate(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)));
+
+        LoanInstallment loanInstallment2 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 2);
+        LoanInstallment loanInstallment3 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 3);
+        LoanInstallment loanInstallment4 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 4);
+        LoanInstallment loanInstallment5 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 5);
+        LoanInstallment loanInstallment6 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 6);
+
+        loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
+
+        when(customerService.getById(payLoanRequest.getCustomerId())).thenReturn(customer);
+        when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
+
+        PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
+
+        assertFalse(payLoanResponse.isLoanPaid());
+        assertEquals(1, payLoanResponse.installmentsPaid());
+        assertEquals(0, BigDecimal.valueOf(2502.50).compareTo(payLoanResponse.amountPaid()));
     }
 
     @ParameterizedTest
@@ -127,9 +195,6 @@ class LoanServiceImplTest {
         payLoanRequest.setLoanId(5001L);
         payLoanRequest.setAmount(amount);
         payLoanRequest.setCustomerId(1001L);
-
-        Customer customer = new Customer();
-        customer.setId(1001L);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -150,7 +215,7 @@ class LoanServiceImplTest {
 
         assertFalse(payLoanResponse.isLoanPaid());
         assertEquals(2, payLoanResponse.installmentsPaid());
-        assertTrue(BigDecimal.valueOf(5000).compareTo(payLoanResponse.amountPaid()) == 0);
+        assertEquals(0, BigDecimal.valueOf(5000).compareTo(payLoanResponse.amountPaid()));
 
         verify(loanRepository, never()).save(any());
 
@@ -161,8 +226,8 @@ class LoanServiceImplTest {
         LoanInstallment savedLoanInstallment2 = savedLoanInstallments.get(1);
         assertEquals(1, savedLoanInstallment1.getId());
         assertEquals(2, savedLoanInstallment2.getId());
-        assertTrue(BigDecimal.valueOf(2500).compareTo(savedLoanInstallment1.getPaidAmount()) == 0);
-        assertTrue(BigDecimal.valueOf(2500).compareTo(savedLoanInstallment2.getPaidAmount()) == 0);
+        assertEquals(0, BigDecimal.valueOf(2500).compareTo(savedLoanInstallment1.getPaidAmount()));
+        assertEquals(0, BigDecimal.valueOf(2500).compareTo(savedLoanInstallment2.getPaidAmount()));
         assertNotNull(savedLoanInstallment1.getPaymentDate());
         assertNotNull(savedLoanInstallment2.getPaymentDate());
         assertTrue(savedLoanInstallment1.isPaid());
@@ -177,9 +242,6 @@ class LoanServiceImplTest {
         payLoanRequest.setLoanId(5001L);
         payLoanRequest.setAmount(amount);
         payLoanRequest.setCustomerId(1001L);
-
-        Customer customer = new Customer();
-        customer.setId(1001L);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -200,7 +262,7 @@ class LoanServiceImplTest {
 
         assertTrue(payLoanResponse.isLoanPaid());
         assertEquals(3, payLoanResponse.installmentsPaid());
-        assertTrue(BigDecimal.valueOf(7500).compareTo(payLoanResponse.amountPaid()) == 0);
+        assertEquals(0, BigDecimal.valueOf(7500).compareTo(payLoanResponse.amountPaid()));
         verify(loanRepository, times(1)).save(any());
         verify(loanInstallmentRepository, times(3)).save(any());
     }
@@ -213,9 +275,6 @@ class LoanServiceImplTest {
         payLoanRequest.setLoanId(5001L);
         payLoanRequest.setAmount(amount);
         payLoanRequest.setCustomerId(1001L);
-
-        Customer customer = new Customer();
-        customer.setId(1001L);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -236,6 +295,7 @@ class LoanServiceImplTest {
         loanInstallment.setLoan(loan);
         loanInstallment.setAmount(BigDecimal.valueOf(installmentAmount));
         loanInstallment.setPaid(isPaid);
+        loanInstallment.setDueDate(Date.from(Instant.now()));
         return loanInstallment;
     }
 }

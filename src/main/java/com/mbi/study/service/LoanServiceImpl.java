@@ -11,6 +11,7 @@ import com.mbi.study.repository.entity.LoanInstallment;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -117,34 +118,47 @@ public class LoanServiceImpl implements LoanService {
         BigDecimal monthlyInstallmentAmount = loan.getInstallments().stream().findAny().map(LoanInstallment::getAmount).orElse(BigDecimal.ZERO);
         int validateLoanFactor = validateLoanAmount(payLoanRequest, monthlyInstallmentAmount);
 
-        List<LoanInstallment> loanInstallments = payInstallments(loan, validateLoanFactor);
+        PayInstallmentDTO payInstallmentDTO = payInstallments(loan, validateLoanFactor);
 
-        if (isAllLoanInstallmentsArePaid(loanInstallments)) {
+        if (isAllLoanInstallmentsArePaid(payInstallmentDTO.loanInstallments())) {
             loan.setPaid(true);
             saveLoan(loan);
             // customerService.freeUsedCreditLimit(customer, loan.getLoanAmount()); // TODO shall the usedCreditLimit be updated?
         }
-        return new PayLoanResponse(validateLoanFactor, monthlyInstallmentAmount.multiply(BigDecimal.valueOf(validateLoanFactor)), loan.isPaid());
+        return new PayLoanResponse(validateLoanFactor, payInstallmentDTO.paidAmount, loan.isPaid());
     }
 
     private Loan saveLoan(Loan loan) {
         return loanRepository.save(loan);
     }
 
-    private List<LoanInstallment> payInstallments(Loan loan, int validateLoanFactor) {
+    private PayInstallmentDTO payInstallments(Loan loan, int validateLoanFactor) {
+        Date currentDate = Date.from(Instant.now());
+        BigDecimal paidAmount = BigDecimal.ZERO;
+
         List<LoanInstallment> loanInstallments = loan.getInstallments().stream()
                 .filter(loanInstallment -> !loanInstallment.isPaid()).toList();
-
         for (int installmentIndex = 0; installmentIndex < validateLoanFactor; installmentIndex++) {
             if (installmentIndex < loanInstallments.size()) {
                 LoanInstallment loanInstallment = loanInstallments.get(installmentIndex);
                 loanInstallment.setPaid(true);
-                loanInstallment.setPaymentDate(Date.from(Instant.now()));
-                loanInstallment.setPaidAmount(loanInstallment.getAmount());
+                loanInstallment.setPaymentDate(currentDate);
+                if (DateUtils.isSameDay(loanInstallment.getDueDate(), currentDate)) { // same day
+                    paidAmount = paidAmount.add(loanInstallment.getAmount());
+                    loanInstallment.setPaidAmount(loanInstallment.getAmount());
+                } else if (currentDate.before(loanInstallment.getDueDate())) { // reward
+                    BigDecimal rewardedLoan = loanInstallment.getAmount().subtract(loanInstallment.getAmount().divide(BigDecimal.valueOf(1000), 2, RoundingMode.FLOOR));
+                    paidAmount = paidAmount.add(rewardedLoan);
+                    loanInstallment.setPaidAmount(rewardedLoan);
+                } else { // penalty
+                    BigDecimal rewardedLoan = loanInstallment.getAmount().add(loanInstallment.getAmount().divide(BigDecimal.valueOf(1000), 2, RoundingMode.FLOOR));
+                    paidAmount = paidAmount.add(rewardedLoan);
+                    loanInstallment.setPaidAmount(loanInstallment.getAmount());
+                }
                 loanInstallmentRepository.save(loanInstallment);
             }
         }
-        return loanInstallments;
+        return new PayInstallmentDTO(loanInstallments, paidAmount);
     }
 
     private void validateLoanPayment(Loan loan, Customer customer) {
@@ -175,4 +189,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
 
+    private record PayInstallmentDTO(List<LoanInstallment> loanInstallments, BigDecimal paidAmount) {
+
+    }
 }
