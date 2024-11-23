@@ -1,5 +1,9 @@
 HELP.md
 .gradle
+.gradle/buildOutputCleanup
+.gradle/8.11/executionHistory
+.gradle/8.11/fileHashes
+
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
