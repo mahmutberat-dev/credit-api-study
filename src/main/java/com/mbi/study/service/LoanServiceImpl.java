@@ -31,7 +31,7 @@ import java.util.Optional;
 public class LoanServiceImpl implements LoanService {
     private final UserService userService;
     private final LoanRepository loanRepository;
-    private final LoanInstallmentRepository loanInstallmentRepository;
+    private final LoanInstallmentRepository loanInstallmentRepository; // FIXME use LoanInstallmentService!
     private final LoanMapper loanMapper;
 
     @Override
@@ -149,6 +149,7 @@ public class LoanServiceImpl implements LoanService {
                 LoanInstallment loanInstallment = loanInstallments.get(installmentIndex);
                 loanInstallment.setIsPaid(Boolean.TRUE);
                 loanInstallment.setPaymentDate(currentDate);
+                // TODO hide these calculations over an abstraction specifically a strategy!
                 if (DateUtils.isSameDay(loanInstallment.getDueDate(), currentDate)) { // same day
                     paidAmount = paidAmount.add(loanInstallment.getAmount());
                     loanInstallment.setPaidAmount(loanInstallment.getAmount());
