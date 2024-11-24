@@ -31,7 +31,7 @@ public class JWTFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
             String authorizationToken = request.getHeader("Authorization");
-            log.info("JWTFilter invoked for {}", request.getRequestURL());
+            log.debug("JWTFilter invoked for {}", request.getRequestURL());
 
             if (authorizationToken != null && authorizationToken.startsWith("Bearer ")) {
                 validateToken(authorizationToken);
@@ -56,7 +56,6 @@ public class JWTFilter extends OncePerRequestFilter {
                         List.of(user.getRoleName())
                 );
 
-//                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
 

@@ -58,8 +58,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User freeUsedCreditLimit(User user, BigDecimal totalLoanAmount) {
-        user.addUserUsedCreditLimit(totalLoanAmount);
+    public User freeUsedCreditLimit(User user, BigDecimal totalLoanAmount) { // TODO decide that is this method required?
+        // user.removeFromCreditLimit(totalLoanAmount);
         return userRepository.save(user);
     }
 
