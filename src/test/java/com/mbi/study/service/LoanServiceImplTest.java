@@ -6,7 +6,7 @@ import com.mbi.study.controller.dto.PayLoanRequest;
 import com.mbi.study.controller.dto.PayLoanResponse;
 import com.mbi.study.repository.LoanInstallmentRepository;
 import com.mbi.study.repository.LoanRepository;
-import com.mbi.study.repository.entity.Customer;
+import com.mbi.study.repository.entity.User;
 import com.mbi.study.repository.entity.Loan;
 import com.mbi.study.repository.entity.LoanInstallment;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,20 +34,20 @@ import static org.mockito.Mockito.*;
 class LoanServiceImplTest {
 
     @Mock
-    private CustomerService customerService;
+    private UserService userService;
     @Mock
     private LoanRepository loanRepository;
     @Mock
     private LoanInstallmentRepository loanInstallmentRepository;
     @InjectMocks
     private LoanServiceImpl creditLoanService;
-    private final Customer customer = new Customer();
+    private final User user = new User();
 
     @BeforeEach
     void setUp() {
-        customer.setId(1001L);
-        customer.setCreditLimit(BigDecimal.valueOf(100_000));
-        customer.setUsedCreditLimit(BigDecimal.ZERO);
+        user.setId(1001L);
+        user.setCreditLimit(BigDecimal.valueOf(100_000));
+        user.setUsedCreditLimit(BigDecimal.ZERO);
     }
 
     @Test
@@ -58,7 +58,7 @@ class LoanServiceImplTest {
         createCreditLoanRequest.setNumberOfInstallments(12);
         createCreditLoanRequest.setInterestRate(0.1);
 
-        when(customerService.getById(createCreditLoanRequest.getCustomerId())).thenReturn(customer);
+        when(userService.getById(createCreditLoanRequest.getCustomerId())).thenReturn(user);
         when(loanRepository.save(any())).thenAnswer(argument -> {
             Loan argument1 = (Loan) argument.getArguments()[0];
             argument1.setId(100L);
@@ -70,12 +70,12 @@ class LoanServiceImplTest {
         ArgumentCaptor<Loan> loanArgumentCaptor = ArgumentCaptor.forClass(Loan.class);
         verify(loanRepository).save(loanArgumentCaptor.capture());
         Loan captorValue = loanArgumentCaptor.getValue();
-        assertEquals(captorValue.getCustomer().getId(), createCreditLoanRequest.getCustomerId());
+        assertEquals(captorValue.getUser().getId(), createCreditLoanRequest.getCustomerId());
         assertEquals(BigDecimal.valueOf(110_000.0), captorValue.getLoanAmount());
         assertEquals(12, captorValue.getNumberOfInstallment());
         assertEquals(12, captorValue.getInstallments().size());
 
-        verify(customerService).updateUsedCreditLimit(customer, BigDecimal.valueOf(110_000.0));
+        verify(userService).updateUsedCreditLimit(user, BigDecimal.valueOf(110_000.0));
 
         assertEquals(BigDecimal.valueOf(9_166.67), loanResponse.monthlyInstallmentAmount());
         assertEquals(BigDecimal.valueOf(110_000.0), loanResponse.totalPayment());
@@ -93,7 +93,7 @@ class LoanServiceImplTest {
 
         Loan loan = new Loan();
         loan.setId(3001L);
-        loan.setCustomer(customer);
+        loan.setUser(user);
         LoanInstallment loanInstallment1 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 1);
         LoanInstallment loanInstallment2 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 2);
         LoanInstallment loanInstallment3 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 3);
@@ -103,7 +103,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(customerService.getById(payLoanRequest.getCustomerId())).thenReturn(customer);
+        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -133,7 +133,7 @@ class LoanServiceImplTest {
 
         Loan loan = new Loan();
         loan.setId(3001L);
-        loan.setCustomer(customer);
+        loan.setUser(user);
         LoanInstallment loanInstallment1 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 1);
         loanInstallment1.setDueDate(Date.from(Instant.now().plus(1, ChronoUnit.DAYS)));
 
@@ -145,7 +145,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(customerService.getById(payLoanRequest.getCustomerId())).thenReturn(customer);
+        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -165,7 +165,7 @@ class LoanServiceImplTest {
 
         Loan loan = new Loan();
         loan.setId(3001L);
-        loan.setCustomer(customer);
+        loan.setUser(user);
         LoanInstallment loanInstallment1 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 1);
         loanInstallment1.setDueDate(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)));
 
@@ -177,7 +177,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(customerService.getById(payLoanRequest.getCustomerId())).thenReturn(customer);
+        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -198,7 +198,7 @@ class LoanServiceImplTest {
 
         Loan loan = new Loan();
         loan.setId(3001L);
-        loan.setCustomer(customer);
+        loan.setUser(user);
         LoanInstallment loanInstallment1 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 1);
         LoanInstallment loanInstallment2 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 2);
         LoanInstallment loanInstallment3 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 3);
@@ -208,7 +208,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(customerService.getById(payLoanRequest.getCustomerId())).thenReturn(customer);
+        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -245,7 +245,7 @@ class LoanServiceImplTest {
 
         Loan loan = new Loan();
         loan.setId(3001L);
-        loan.setCustomer(customer);
+        loan.setUser(user);
         LoanInstallment loanInstallment1 = createLoanInterestStub(loan, monthlyInstallmentAmount, true, 1);
         LoanInstallment loanInstallment2 = createLoanInterestStub(loan, monthlyInstallmentAmount, true, 2);
         LoanInstallment loanInstallment3 = createLoanInterestStub(loan, monthlyInstallmentAmount, true, 3);
@@ -255,7 +255,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(customerService.getById(payLoanRequest.getCustomerId())).thenReturn(customer);
+        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -278,12 +278,12 @@ class LoanServiceImplTest {
 
         Loan loan = new Loan();
         loan.setId(3001L);
-        loan.setCustomer(customer);
+        loan.setUser(user);
         LoanInstallment loanInstallment1 = createLoanInterestStub(loan, monthlyInstallmentAmount, false, 1);
 
         loan.setInstallments(List.of(loanInstallment1));
 
-        when(customerService.getById(payLoanRequest.getCustomerId())).thenReturn(customer);
+        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         assertThrows(IllegalArgumentException.class, () -> creditLoanService.payLoan(payLoanRequest));

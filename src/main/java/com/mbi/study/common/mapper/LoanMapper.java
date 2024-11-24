@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
 public interface LoanMapper {
 
     @Mapping(target = "loanId", source = "entity.id")
-    @Mapping(target = "customerId", source = "entity.customer.id")
+    @Mapping(target = "userId", source = "entity.user.id")
     LoanResponse toLoanResponse(Loan entity);
 
 }

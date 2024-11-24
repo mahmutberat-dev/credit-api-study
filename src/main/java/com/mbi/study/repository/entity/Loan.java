@@ -22,8 +22,8 @@ public class Loan extends BaseEntity {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @OneToMany
     @Cascade(CascadeType.ALL)

@@ -5,7 +5,7 @@ import com.mbi.study.common.mapper.LoanMapper;
 import com.mbi.study.controller.dto.*;
 import com.mbi.study.repository.LoanInstallmentRepository;
 import com.mbi.study.repository.LoanRepository;
-import com.mbi.study.repository.entity.Customer;
+import com.mbi.study.repository.entity.User;
 import com.mbi.study.repository.entity.Loan;
 import com.mbi.study.repository.entity.LoanInstallment;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,7 +29,7 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 public class LoanServiceImpl implements LoanService {
-    private final CustomerService customerService;
+    private final UserService userService;
     private final LoanRepository loanRepository;
     private final LoanInstallmentRepository loanInstallmentRepository;
     private final LoanMapper loanMapper;
@@ -37,8 +37,8 @@ public class LoanServiceImpl implements LoanService {
     @Override
     @Transactional
     public CreateLoanResponse create(CreateCreditLoanRequest createCreditLoanRequest) {
-        Customer customer = customerService.getById(createCreditLoanRequest.getCustomerId());
-        if (!customer.hasEnoughLimit(createCreditLoanRequest.getAmount())) {
+        User user = userService.getById(createCreditLoanRequest.getCustomerId());
+        if (!user.hasEnoughLimit(createCreditLoanRequest.getAmount())) {
             throw new CustomerNotEnoughLimitForLoanException("Cannot create loan since user does not has enough limit");
         }
 
@@ -46,7 +46,7 @@ public class LoanServiceImpl implements LoanService {
 
         // save loan with installments
         Loan loan = Loan.builder()
-                .customer(customer)
+                .user(user)
                 .loanAmount(totalLoanAmount)
                 .isPaid(false)
                 .build();
@@ -55,7 +55,7 @@ public class LoanServiceImpl implements LoanService {
         loan.setNumberOfInstallment(installments.size());
         Loan savedLoan = saveLoan(loan);
 
-        customerService.updateUsedCreditLimit(customer, totalLoanAmount);
+        userService.updateUsedCreditLimit(user, totalLoanAmount);
 
         BigDecimal monthlyInstallmentAmount = installments.stream().findAny().map(LoanInstallment::getAmount).orElse(BigDecimal.ZERO);
 
@@ -94,7 +94,7 @@ public class LoanServiceImpl implements LoanService {
     @Override
     public List<LoanResponse> getLoans(GetAllCustomerLoanRequest allCustomerLoanRequest) {
         Long customerId = allCustomerLoanRequest.getCustomerId(); // TODO think to use JPA Specifications
-        return loanRepository.getLoansByCustomerId(customerId).stream().map(loanMapper::toLoanResponse).toList();
+        return loanRepository.getLoansByUserId(customerId).stream().map(loanMapper::toLoanResponse).toList();
     }
 
     @Override
@@ -110,10 +110,10 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public PayLoanResponse payLoan(PayLoanRequest payLoanRequest) {
-        Customer customer = customerService.getById(payLoanRequest.getCustomerId());
+        User user = userService.getById(payLoanRequest.getCustomerId());
         Loan loan = getById(payLoanRequest.getLoanId());
 
-        validateLoanPayment(loan, customer);
+        validateLoanPayment(loan, user);
 
         BigDecimal monthlyInstallmentAmount = loan.getInstallments().stream().findAny().map(LoanInstallment::getAmount).orElse(BigDecimal.ZERO);
         int validateLoanFactor = validateLoanAmount(payLoanRequest, monthlyInstallmentAmount);
@@ -161,12 +161,12 @@ public class LoanServiceImpl implements LoanService {
         return new PayInstallmentDTO(loanInstallments, paidAmount);
     }
 
-    private void validateLoanPayment(Loan loan, Customer customer) {
+    private void validateLoanPayment(Loan loan, User user) {
         if (loan.isPaid()) {
             throw new IllegalStateException(String.format("The Loan is already paid. Loan Id: %d", loan.getId()));
         }
-        if (!loan.getCustomer().getId().equals(customer.getId())) {
-            throw new IllegalStateException(String.format("Cannot pay loan. Loan owner id: %s is not matched with requested user id: %s", loan.getCustomer().getId(), customer.getId()));
+        if (!loan.getUser().getId().equals(user.getId())) {
+            throw new IllegalStateException(String.format("Cannot pay loan. Loan owner id: %s is not matched with requested user id: %s", loan.getUser().getId(), user.getId()));
         }
     }
 

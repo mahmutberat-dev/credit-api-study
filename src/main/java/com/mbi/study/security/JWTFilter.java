@@ -2,9 +2,7 @@ package com.mbi.study.security;
 
 import com.mbi.study.common.UserRoleEnum;
 import com.mbi.study.common.exception.AuthorizationTokenException;
-import com.mbi.study.repository.entity.Customer;
 import com.mbi.study.repository.entity.User;
-import com.mbi.study.service.CustomerService;
 import com.mbi.study.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -28,7 +26,6 @@ import java.util.List;
 public class JWTFilter extends OncePerRequestFilter {
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final UserService userService;
-    private final CustomerService customerService;
     private final JWTUtil jwtUtil;
 
     @Override
@@ -50,30 +47,16 @@ public class JWTFilter extends OncePerRequestFilter {
     private void validateToken(String authorizationToken) {
         final String jwt = authorizationToken.substring(7);
         final String idFromJWT = jwtUtil.extractUserId(jwt);
+        final String userNameJWT = jwtUtil.extractUsername(jwt);
         final UserRoleEnum userRole = jwtUtil.extractUserType(jwt);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
-            if (UserRoleEnum.ADMIN.equals(userRole)) {
-                User user = userService.findByUserId(idFromJWT);
-
-                if (jwtUtil.isTokenValid(jwt, user)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            user,
-                            null,
-                            List.of(user.getRoleName())
-                    );
-
-//                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            }
-        } else if (UserRoleEnum.CUSTOMER.equals(userRole)) {
-            Customer customer = customerService.getById(Long.parseLong(idFromJWT));
-            if (jwtUtil.isTokenValid(jwt, customer)) {
+            User user = userService.getByUserName(userNameJWT);
+            if (jwtUtil.isTokenValid(jwt, user)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        customer,
+                        user,
                         null,
-                        List.of(customer.getRoleName())
+                        List.of(user.getRoleName())
                 );
 
 //                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

@@ -1,43 +1,63 @@
 package com.mbi.study.service;
 
-import com.mbi.study.common.exception.AuthenticationException;
-import com.mbi.study.controller.dto.LoginRequest;
-import com.mbi.study.controller.dto.LoginResponse;
-import com.mbi.study.controller.dto.RegistrationRequest;
+import com.mbi.study.controller.dto.CreateUserRequest;
 import com.mbi.study.repository.UserRepository;
 import com.mbi.study.repository.entity.User;
-import com.mbi.study.security.JWTUtil;
+import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import static com.mbi.study.common.UserRoleEnum.ADMIN;
+import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserServiceImpl implements UserService {
+
     private final UserRepository userRepository;
 
     @Override
-    public void register(RegistrationRequest registrationRequest) {
-        User user = User.builder()
-                .roleName(ADMIN)
-                .username(registrationRequest.name())
-                .password(registrationRequest.password())
-                .build();
-
-        userRepository.save(user);
+    public User getById(Long customerId) {
+        return userRepository.findById(customerId)
+                .orElseThrow(() -> new EntityNotFoundException(String.format("No any customer found with customerId: %d", customerId)));
     }
 
     @Override
-    public User findByUserId(String userId) {
-        return userRepository.findById(Long.valueOf(userId)).orElseThrow(EntityNotFoundException::new);
+    public User create(CreateUserRequest createUserRequest) {
+        if (getByUserName(createUserRequest.username()) != null) {
+            throw new EntityExistsException("The user already exists with username %s".formatted(createUserRequest.username()));
+        }
+        User user = User.builder()
+                .name(createUserRequest.name())
+                .surname(createUserRequest.surname())
+                .creditLimit(createUserRequest.creditLimit())
+                .username(createUserRequest.username())
+                .password(createUserRequest.password())
+                .usedCreditLimit(BigDecimal.ZERO)
+                .roleName(createUserRequest.customerRole())
+                .loans(List.of())
+                .build();
+        return userRepository.save(user);
     }
 
-    public User findByUserName(String username) {
-        return userRepository.findByUsername(username).orElseThrow(EntityNotFoundException::new);
+    @Override
+    public User updateUsedCreditLimit(User user, BigDecimal totalLoanAmount) {
+        user.addUserCreditLimit(totalLoanAmount);
+        return userRepository.save(user);
     }
 
+    @Override
+    public User freeUsedCreditLimit(User user, BigDecimal totalLoanAmount) {
+        user.addUserCreditLimit(totalLoanAmount);
+        return userRepository.save(user);
+    }
+
+    @Override
+    public User getByUserName(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException(String.format("No any customer found with username: %s", username)));
+    }
 }
