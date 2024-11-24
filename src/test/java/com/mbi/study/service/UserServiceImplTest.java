@@ -46,14 +46,16 @@ class UserServiceImplTest {
 
     @Test
     void shouldCreateCustomer() {
+        when(userRepository.findByUsername(any())).thenReturn(Optional.empty());
+
         when(userRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-        User user = userService.create(new CreateUserRequest("John", "Sir", "user-1", "pass", BigDecimal.valueOf(100_000), CUSTOMER));
+        User user = userService.create(new CreateUserRequest("John", "Sir", "pass", "user-1", BigDecimal.valueOf(100_000), CUSTOMER));
 
         assertEquals("John", user.getName());
         assertEquals("Sir", user.getSurname());
-        assertEquals("user-1", user.getUserName());
         assertEquals("pass", user.getPassword());
+        assertEquals("user-1", user.getUserName());
         assertEquals(CUSTOMER, user.getRoleName());
         assertEquals(BigDecimal.valueOf(100_000), user.getCreditLimit());
     }
@@ -62,6 +64,34 @@ class UserServiceImplTest {
     void shouldThrowExceptionForSameUsernameNotUnique() {
         when(userRepository.findByUsername(any())).thenReturn(Optional.ofNullable(User.builder().build()));
 
-        assertThrows(EntityExistsException.class, ()-> userService.create(new CreateUserRequest("John", "Sir", "user-1", "pass", BigDecimal.valueOf(100_000), CUSTOMER)));
+        assertThrows(EntityExistsException.class, () -> userService.create(new CreateUserRequest("John", "Sir", "user-1", "pass", BigDecimal.valueOf(100_000), CUSTOMER)));
     }
+
+    @Test
+    void shouldGetByUserName() {
+        String userName = "user-1";
+        User user = User.builder().id(1001L).name("John").surname("Sir").username(userName).build();
+        when(userRepository.findByUsername(userName)).thenReturn(Optional.of(user));
+        User result = userService.getByUserName(userName);
+        assertEquals(user, result);
+    }
+
+    @Test
+    void shouldThrowEntityNotFoundForGetByUserName() {
+        String userName = "user-1";
+        when(userRepository.findByUsername(userName)).thenReturn(Optional.empty());
+        assertThrows(EntityNotFoundException.class, () -> userService.getByUserName(userName));
+    }
+
+    @Test
+    void shouldUpdateUsedCreditLimit() {
+        User user = User.builder().id(1001L).name("John").surname("Sir").creditLimit(BigDecimal.ZERO).usedCreditLimit(BigDecimal.ZERO).build();
+        BigDecimal totalLoanAmount = BigDecimal.valueOf(50000);
+        when(userRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+
+        User result = userService.updateUsedCreditLimit(user, totalLoanAmount);
+
+        assertEquals(result.getUsedCreditLimit(), totalLoanAmount);
+    }
+
 }

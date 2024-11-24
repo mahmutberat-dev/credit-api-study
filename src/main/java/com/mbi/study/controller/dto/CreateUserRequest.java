@@ -9,8 +9,8 @@ import java.math.BigDecimal;
 public record CreateUserRequest(
         @NotEmpty String name,
         @NotEmpty String surname,
-        @NotEmpty String username,
         @NotEmpty String password,
+        @NotEmpty String username,
         @NotNull BigDecimal creditLimit,
         @NotNull UserRoleEnum customerRole
         ) {

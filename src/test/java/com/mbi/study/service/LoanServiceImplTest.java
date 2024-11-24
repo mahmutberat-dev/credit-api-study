@@ -1,14 +1,15 @@
 package com.mbi.study.service;
 
+import com.mbi.study.common.exception.CustomerNotEnoughLimitForLoanException;
 import com.mbi.study.controller.dto.CreateCreditLoanRequest;
 import com.mbi.study.controller.dto.CreateLoanResponse;
 import com.mbi.study.controller.dto.PayLoanRequest;
 import com.mbi.study.controller.dto.PayLoanResponse;
 import com.mbi.study.repository.LoanInstallmentRepository;
 import com.mbi.study.repository.LoanRepository;
-import com.mbi.study.repository.entity.User;
 import com.mbi.study.repository.entity.Loan;
 import com.mbi.study.repository.entity.LoanInstallment;
+import com.mbi.study.repository.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,13 +53,9 @@ class LoanServiceImplTest {
 
     @Test
     void shouldCreateLoan() {
-        CreateCreditLoanRequest createCreditLoanRequest = new CreateCreditLoanRequest();
-        createCreditLoanRequest.setCustomerId(1001L);
-        createCreditLoanRequest.setAmount(BigDecimal.valueOf(100_000));
-        createCreditLoanRequest.setNumberOfInstallments(12);
-        createCreditLoanRequest.setInterestRate(0.1);
+        CreateCreditLoanRequest createCreditLoanRequest = new CreateCreditLoanRequest(1001L, BigDecimal.valueOf(100_000), 12, 0.1);
 
-        when(userService.getById(createCreditLoanRequest.getCustomerId())).thenReturn(user);
+        when(userService.getById(createCreditLoanRequest.customerId())).thenReturn(user);
         when(loanRepository.save(any())).thenAnswer(argument -> {
             Loan argument1 = (Loan) argument.getArguments()[0];
             argument1.setId(100L);
@@ -70,7 +67,7 @@ class LoanServiceImplTest {
         ArgumentCaptor<Loan> loanArgumentCaptor = ArgumentCaptor.forClass(Loan.class);
         verify(loanRepository).save(loanArgumentCaptor.capture());
         Loan captorValue = loanArgumentCaptor.getValue();
-        assertEquals(captorValue.getUser().getId(), createCreditLoanRequest.getCustomerId());
+        assertEquals(captorValue.getUser().getId(), createCreditLoanRequest.customerId());
         assertEquals(BigDecimal.valueOf(110_000.0), captorValue.getLoanAmount());
         assertEquals(12, captorValue.getNumberOfInstallment());
         assertEquals(12, captorValue.getInstallments().size());
@@ -82,14 +79,21 @@ class LoanServiceImplTest {
         assertEquals(BigDecimal.valueOf(10_000.0), loanResponse.totalInterest());
     }
 
+    @Test
+    void shouldThrowExceptionForUserDoesNotHasLimitToCreateLoan() {
+        CreateCreditLoanRequest createCreditLoanRequest = new CreateCreditLoanRequest(1001L, BigDecimal.valueOf(100_000), 12, 0.1);
+        user.setUsedCreditLimit(BigDecimal.ONE);
+        user.setCreditLimit(BigDecimal.ZERO);
+        when(userService.getById(createCreditLoanRequest.customerId())).thenReturn(user);
+
+        assertThrows(CustomerNotEnoughLimitForLoanException.class, () -> creditLoanService.create(createCreditLoanRequest));
+    }
+
     @ParameterizedTest
     @ValueSource(doubles = {2500, 2900, 3000, 3500, 4999})
     void shouldPaySingleLoanInstallment(double amount) {
         double monthlyInstallmentAmount = 2500;
-        PayLoanRequest payLoanRequest = new PayLoanRequest();
-        payLoanRequest.setLoanId(5001L);
-        payLoanRequest.setAmount(amount);
-        payLoanRequest.setCustomerId(1001L);
+        PayLoanRequest payLoanRequest = new PayLoanRequest(5001L, 1001L, amount);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -103,7 +107,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
+        when(userService.getById(payLoanRequest.customerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -126,10 +130,10 @@ class LoanServiceImplTest {
     @Test
     void shouldPayRewardedLoanInstallment() {
         double monthlyInstallmentAmount = 2500;
-        PayLoanRequest payLoanRequest = new PayLoanRequest();
-        payLoanRequest.setLoanId(5001L);
-        payLoanRequest.setAmount(monthlyInstallmentAmount);
-        payLoanRequest.setCustomerId(1001L);
+        PayLoanRequest payLoanRequest = new PayLoanRequest(5001L, 1001L, monthlyInstallmentAmount);
+//        payLoanRequest.setLoanId(5001L);
+//        payLoanRequest.setAmount(monthlyInstallmentAmount);
+//        payLoanRequest.setCustomerId(1001L);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -145,7 +149,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
+        when(userService.getById(payLoanRequest.customerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -158,10 +162,7 @@ class LoanServiceImplTest {
     @Test
     void shouldPayPenaltyLoanInstallment() {
         double monthlyInstallmentAmount = 2500;
-        PayLoanRequest payLoanRequest = new PayLoanRequest();
-        payLoanRequest.setLoanId(5001L);
-        payLoanRequest.setAmount(monthlyInstallmentAmount);
-        payLoanRequest.setCustomerId(1001L);
+        PayLoanRequest payLoanRequest = new PayLoanRequest(5001L, 1001L, monthlyInstallmentAmount);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -177,7 +178,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
+        when(userService.getById(payLoanRequest.customerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -191,10 +192,10 @@ class LoanServiceImplTest {
     @ValueSource(doubles = {5000, 5001, 7499})
     void shouldPayTwiceLoanInstallments(double amount) {
         double monthlyInstallmentAmount = 2500;
-        PayLoanRequest payLoanRequest = new PayLoanRequest();
-        payLoanRequest.setLoanId(5001L);
-        payLoanRequest.setAmount(amount);
-        payLoanRequest.setCustomerId(1001L);
+        PayLoanRequest payLoanRequest = new PayLoanRequest(5001L, 1001L, amount);
+//        payLoanRequest.setLoanId(5001L);
+//        payLoanRequest.setAmount(amount);
+//        payLoanRequest.setCustomerId(1001L);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -208,7 +209,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
+        when(userService.getById(payLoanRequest.customerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -238,10 +239,7 @@ class LoanServiceImplTest {
     @ValueSource(doubles = {7500})
     void shouldPayRemainedLoanInstallments(double amount) {
         double monthlyInstallmentAmount = 2500;
-        PayLoanRequest payLoanRequest = new PayLoanRequest();
-        payLoanRequest.setLoanId(5001L);
-        payLoanRequest.setAmount(amount);
-        payLoanRequest.setCustomerId(1001L);
+        PayLoanRequest payLoanRequest = new PayLoanRequest(5001L, 1001L, amount);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -255,7 +253,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1, loanInstallment2, loanInstallment3, loanInstallment4, loanInstallment5, loanInstallment6));
 
-        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
+        when(userService.getById(payLoanRequest.customerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         PayLoanResponse payLoanResponse = creditLoanService.payLoan(payLoanRequest);
@@ -271,10 +269,7 @@ class LoanServiceImplTest {
     @ValueSource(doubles = {0, 2499, 100, 1000, 10_000, 15_000})
     void shouldNotPayLoanInstallment(double amount) {
         double monthlyInstallmentAmount = 2500;
-        PayLoanRequest payLoanRequest = new PayLoanRequest();
-        payLoanRequest.setLoanId(5001L);
-        payLoanRequest.setAmount(amount);
-        payLoanRequest.setCustomerId(1001L);
+        PayLoanRequest payLoanRequest = new PayLoanRequest(5001L, 1001L, amount);
 
         Loan loan = new Loan();
         loan.setId(3001L);
@@ -283,7 +278,7 @@ class LoanServiceImplTest {
 
         loan.setInstallments(List.of(loanInstallment1));
 
-        when(userService.getById(payLoanRequest.getCustomerId())).thenReturn(user);
+        when(userService.getById(payLoanRequest.customerId())).thenReturn(user);
         when(loanRepository.findById(5001L)).thenReturn(Optional.of(loan));
 
         assertThrows(IllegalArgumentException.class, () -> creditLoanService.payLoan(payLoanRequest));

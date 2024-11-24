@@ -37,10 +37,7 @@ public class LoanServiceImpl implements LoanService {
     @Override
     @Transactional
     public CreateLoanResponse create(CreateCreditLoanRequest createCreditLoanRequest) {
-        User user = userService.getById(createCreditLoanRequest.getCustomerId());
-        if (!user.hasEnoughLimit(createCreditLoanRequest.getAmount())) {
-            throw new CustomerNotEnoughLimitForLoanException("Cannot create loan since user does not has enough limit");
-        }
+        User user = getUserToCreateLoan(createCreditLoanRequest);
 
         BigDecimal totalLoanAmount = calculateTotalLoanAmount(createCreditLoanRequest);
 
@@ -59,17 +56,25 @@ public class LoanServiceImpl implements LoanService {
 
         BigDecimal monthlyInstallmentAmount = installments.stream().findAny().map(LoanInstallment::getAmount).orElse(BigDecimal.ZERO);
 
-        return new CreateLoanResponse(savedLoan.getId(), monthlyInstallmentAmount, totalLoanAmount, totalLoanAmount.subtract(createCreditLoanRequest.getAmount()));
+        return new CreateLoanResponse(savedLoan.getId(), monthlyInstallmentAmount, totalLoanAmount, totalLoanAmount.subtract(createCreditLoanRequest.amount()));
+    }
+
+    private User getUserToCreateLoan(CreateCreditLoanRequest createCreditLoanRequest) {
+        User user = userService.getById(createCreditLoanRequest.customerId());
+        if (!user.hasEnoughLimit(createCreditLoanRequest.amount())) {
+            throw new CustomerNotEnoughLimitForLoanException("Cannot create loan since user does not has enough limit");
+        }
+        return user;
     }
 
     private static BigDecimal calculateMonthlyPaymentAmount(CreateCreditLoanRequest createCreditLoanRequest, BigDecimal totalLoanAmount) {
-        return totalLoanAmount.divide(BigDecimal.valueOf(createCreditLoanRequest.getNumberOfInstallments()), 2, RoundingMode.HALF_UP);
+        return totalLoanAmount.divide(BigDecimal.valueOf(createCreditLoanRequest.numberOfInstallments()), 2, RoundingMode.HALF_UP);
     }
 
     private List<LoanInstallment> createInstallments(Loan loan, BigDecimal totalLoanAmount, CreateCreditLoanRequest createCreditLoanRequest) {
         List<LoanInstallment> installments = new ArrayList<>();
         BigDecimal installmentAmountPerMonth = calculateMonthlyPaymentAmount(createCreditLoanRequest, totalLoanAmount);
-        for (int installmentIndex = 0; installmentIndex < createCreditLoanRequest.getNumberOfInstallments(); installmentIndex++) {
+        for (int installmentIndex = 0; installmentIndex < createCreditLoanRequest.numberOfInstallments(); installmentIndex++) {
             LoanInstallment loanInstallment = LoanInstallment.builder()
                     .loan(loan)
                     .amount(installmentAmountPerMonth)
@@ -93,7 +98,7 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public List<LoanResponse> getLoans(GetAllCustomerLoanRequest allCustomerLoanRequest) {
-        Long customerId = allCustomerLoanRequest.getCustomerId(); // TODO think to use JPA Specifications
+        Long customerId = allCustomerLoanRequest.customerId(); // TODO think to use JPA Specifications
         return loanRepository.getLoansByUserId(customerId).stream().map(loanMapper::toLoanResponse).toList();
     }
 
@@ -110,8 +115,8 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public PayLoanResponse payLoan(PayLoanRequest payLoanRequest) {
-        User user = userService.getById(payLoanRequest.getCustomerId());
-        Loan loan = getById(payLoanRequest.getLoanId());
+        User user = userService.getById(payLoanRequest.customerId());
+        Loan loan = getById(payLoanRequest.loanId());
 
         validateLoanPayment(loan, user);
 
@@ -175,7 +180,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private int validateLoanAmount(PayLoanRequest payLoanRequest, BigDecimal monthlyInstallmentAmount) {
-        BigDecimal amountBigDecimal = BigDecimal.valueOf(payLoanRequest.getAmount());
+        BigDecimal amountBigDecimal = BigDecimal.valueOf(payLoanRequest.amount());
         int amountFactor = amountBigDecimal.divide(monthlyInstallmentAmount, 2, RoundingMode.FLOOR).intValue();
         if (amountFactor <= 0 || amountFactor > 3) {
             throw new IllegalArgumentException("Loan pay amount is less than a single installment amount or more than 3 times of a single installment amount");
@@ -185,7 +190,7 @@ public class LoanServiceImpl implements LoanService {
 
     private BigDecimal calculateTotalLoanAmount(CreateCreditLoanRequest createCreditLoanRequest) {
         // amount * (1 + interest rate)
-        return createCreditLoanRequest.getAmount().multiply(BigDecimal.valueOf(1 + createCreditLoanRequest.getInterestRate()));
+        return createCreditLoanRequest.amount().multiply(BigDecimal.valueOf(1 + createCreditLoanRequest.interestRate()));
     }
 
 

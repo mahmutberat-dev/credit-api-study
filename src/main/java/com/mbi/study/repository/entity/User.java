@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "username" }) })
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"username"})})
 public class User extends BaseEntity implements LoanAppUser {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "userIdGenerator")
@@ -42,7 +42,7 @@ public class User extends BaseEntity implements LoanAppUser {
     private UserRoleEnum roleName;
 
     public boolean hasEnoughLimit(BigDecimal newCreditAmount) {
-        return newCreditAmount.add(usedCreditLimit).compareTo(creditLimit) <= 0;
+        return usedCreditLimit.add(newCreditAmount).compareTo(creditLimit) <= 0;
     }
 
     public void addUserCreditLimit(BigDecimal totalLoanAmount) {

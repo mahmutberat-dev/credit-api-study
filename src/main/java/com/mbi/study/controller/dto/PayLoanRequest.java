@@ -1,10 +1,5 @@
 package com.mbi.study.controller.dto;
 
-import lombok.Data;
+public record PayLoanRequest(long loanId, long customerId, double amount) {
 
-@Data
-public class PayLoanRequest {
-    private long loanId;
-    private long customerId;
-    private double amount;
 }

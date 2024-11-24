@@ -20,8 +20,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         CreateUserRequest createUserRequest = new CreateUserRequest(
                 registrationRequest.name(),
                 registrationRequest.surname(),
-                registrationRequest.username(),
                 registrationRequest.password(),
+                registrationRequest.username(),
                 BigDecimal.ZERO,
                 registrationRequest.customerRole());
         User user = userService.create(createUserRequest);
