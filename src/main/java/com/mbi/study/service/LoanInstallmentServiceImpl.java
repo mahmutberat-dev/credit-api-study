@@ -21,9 +21,9 @@ public class LoanInstallmentServiceImpl implements LoanInstallmentService {
     @Override
     public List<LoanInstallmentResponse> getByLoanId(Long loanId) {
         List<LoanInstallment> installments = loanInstallmentRepository.findAllById(loanId);
-//        if (installments.isEmpty()) {
-//            throw new EntityNotFoundException(String.format("There is no any installments found for loanId: %s", loanId));
-//        }
+        if (installments.isEmpty()) {
+            throw new EntityNotFoundException(String.format("There is no any installments found for loanId: %s", loanId));
+        }
         return installments.stream()
                 .map(loanInstallmentMapper::fromLoanInstallment)
                 .toList();

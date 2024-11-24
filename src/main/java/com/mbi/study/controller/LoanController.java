@@ -1,10 +1,11 @@
 package com.mbi.study.controller;
 
 import com.mbi.study.controller.dto.*;
-import com.mbi.study.service.LoanService;
 import com.mbi.study.service.LoanInstallmentService;
+import com.mbi.study.service.LoanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,23 +20,25 @@ public class LoanController {
     private final LoanInstallmentService loanInstallmentService;
 
     @PostMapping
-    @PreAuthorize("#createCreditLoanRequest.customerId() == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#createCreditLoanRequest.customerId() == authentication.principal.id or hasAuthority('ADMIN')")
     public CreateLoanResponse createLoan(@Valid @RequestBody CreateCreditLoanRequest createCreditLoanRequest) {
         return loanService.create(createCreditLoanRequest);
     }
 
     @PutMapping
+    @PreAuthorize("#payLoanRequest.customerId() == authentication.principal.id or hasAuthority('ADMIN')")
     public PayLoanResponse payLoan(@Valid @RequestBody PayLoanRequest payLoanRequest) {
         return loanService.payLoan(payLoanRequest);
     }
 
     @GetMapping()
-    @PreAuthorize("#customerId == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("#customerId == authentication.principal.id or hasAuthority('ADMIN')")
     public List<LoanResponse> getCustomerLoansById(@RequestParam Long customerId) {
         return loanService.getLoans(new GetAllCustomerLoanRequest(customerId, 0, false));
     }
 
     @GetMapping("/{loanId}")
+    @PostAuthorize("returnObject.userId() == authentication.principal.id or hasAuthority('ADMIN')")
     public LoanResponse getCustomerLoans(@PathVariable Long loanId) {
         return loanService.getLoanById(loanId);
     }

@@ -104,7 +104,8 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public LoanResponse getLoanById(Long loanId) {
-        return Optional.of(getById(loanId))
+        Loan loan = getById(loanId);
+        return Optional.of(loan)
                 .map(loanMapper::toLoanResponse)
                 .orElseThrow(EntityNotFoundException::new);
     }

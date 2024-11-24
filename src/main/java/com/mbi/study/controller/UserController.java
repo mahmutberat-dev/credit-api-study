@@ -19,7 +19,7 @@ public class UserController {
     private final UserMapper userMapper;
 
     @GetMapping("/{customerId}")
-    @PreAuthorize("#customerId == authentication.principal.customerId or hasRole('ADMIN')")
+    @PreAuthorize("#customerId == authentication.principal.id or hasAuthority('ADMIN')")
     public UserResponse getCustomerById(@PathVariable Long customerId) {
         return userMapper.toUserResponse(userService.getById(customerId));
     }
