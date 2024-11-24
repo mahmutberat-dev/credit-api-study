@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Customer extends BaseEntity {
+public class Customer extends BaseEntity implements LoanAppUser {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customerIdGenerator")
     @SequenceGenerator(name = "customerIdGenerator", sequenceName = "customer_id_seq", allocationSize = 1)
@@ -26,6 +26,8 @@ public class Customer extends BaseEntity {
     private String surname;
     @Column(name = "password")
     private String password;
+    @Column(name = "username")
+    private String username;
     @Column(name = "credit_limit")
     private BigDecimal creditLimit;
     @Column(name = "used_credit_limit")
@@ -45,5 +47,15 @@ public class Customer extends BaseEntity {
     public void addUserCreditLimit(BigDecimal totalLoanAmount) {
         BigDecimal newUsedLimit = getUsedCreditLimit().add(totalLoanAmount);
         setUsedCreditLimit(newUsedLimit);
+    }
+
+    @Override
+    public long getUserId() {
+        return id;
+    }
+
+    @Override
+    public String getUserName() {
+        return "%s_%s".formatted(name, surname);
     }
 }

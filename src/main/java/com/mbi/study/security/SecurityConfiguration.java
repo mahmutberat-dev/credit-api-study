@@ -1,7 +1,6 @@
 package com.mbi.study.security;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -17,42 +16,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfiguration {
 
-    @Autowired
-    private JWTFilter jwtFilter;
-
     @Bean
-    public SecurityFilterChain web(HttpSecurity http) throws Exception {
+    public SecurityFilterChain web(HttpSecurity http, JWTFilter jwtFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(matcherRegistry -> matcherRegistry.anyRequest().permitAll());
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/customer", "/loan/**", "/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers("/api/credit").hasAuthority("USER").anyRequest().authenticated()
+                        .requestMatchers("/auth/login", "/auth/register").permitAll()
                 )
-//
-//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-//                .authenticationManager(new AuthenticationManager() {
-//                    @Override
-//                    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-//
-//                        return null;
-//                    }
-//                })
-//                .authenticationProvider(new DaoAuthenticationProvider() {
-//                    @Override
-//                    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-//                        return null;
-//                    }
-//
-//                    @Override
-//                    public boolean supports(Class<?> authentication) {
-//                        return true;
-//                    }
-//                });
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
 }

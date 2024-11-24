@@ -28,9 +28,9 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Customer create(CreateCustomerRequest createCustomerRequest) {
         Customer customer = Customer.builder()
-                .name(createCustomerRequest.getName())
-                .surname(createCustomerRequest.getSurname())
-                .creditLimit(createCustomerRequest.getCreditLimit())
+                .name(createCustomerRequest.name())
+                .surname(createCustomerRequest.surname())
+                .creditLimit(createCustomerRequest.creditLimit())
                 .usedCreditLimit(BigDecimal.ZERO)
                 .roleName(UserRoleEnum.CUSTOMER)
                 .loans(List.of())
@@ -48,5 +48,12 @@ public class CustomerServiceImpl implements CustomerService {
     public Customer freeUsedCreditLimit(Customer customer, BigDecimal totalLoanAmount) {
         customer.addUserCreditLimit(totalLoanAmount);
         return customerRepository.save(customer);
+    }
+
+    @Override
+    public Customer getByUserName(String username) {
+//        return customerRepository.findByUsername(customerId)
+//                .orElseThrow(() -> new EntityNotFoundException(String.format("No any customer found with customerId: %d", customerId)));;
+        return null;
     }
 }

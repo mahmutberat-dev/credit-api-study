@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User extends BaseEntity {
+public class User extends BaseEntity implements LoanAppUser{
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "userIdGenerator")
     @SequenceGenerator(name = "userIdGenerator", sequenceName = "user_id_seq", allocationSize = 1)
@@ -26,5 +26,15 @@ public class User extends BaseEntity {
     @Column(name = "role_name")
     @Enumerated(EnumType.STRING)
     private UserRoleEnum roleName;
+
+    @Override
+    public long getUserId() {
+        return id;
+    }
+
+    @Override
+    public String getUserName() {
+        return username;
+    }
 }
 
