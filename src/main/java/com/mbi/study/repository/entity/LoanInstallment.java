@@ -14,7 +14,8 @@ import java.util.Date;
 @Builder
 public class LoanInstallment extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "loan_installment_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "loanInstallmentIdGenerator")
+    @SequenceGenerator(name = "loanInstallmentIdGenerator", sequenceName = "loan_installment_id_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
     private Long id;
 

@@ -5,7 +5,13 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <include file="changelog/initial-schema.xml" relativeToChangelogFile="true"/>
-    <include file="changelog/initial-data.xml" relativeToChangelogFile="true"/>
+    <changeSet id="1732441114743-1" author="mahmut-berat">
+        <sql>
+            INSERT INTO PUBLIC."user"
+            ("id", "created_date", "password", "role_name",
+             "username")
+            VALUES (nextval('user_id_seq'), NOW(), 'pass', 'ADMIN', 'admin');
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>

@@ -1,5 +1,6 @@
 package com.mbi.study.service;
 
+import com.mbi.study.common.UserRoleEnum;
 import com.mbi.study.controller.dto.CreateCustomerRequest;
 import com.mbi.study.repository.CustomerRepository;
 import com.mbi.study.repository.entity.Customer;
@@ -50,6 +51,7 @@ class CustomerServiceImplTest {
 
         assertEquals("John", customer.getName());
         assertEquals("Sir", customer.getSurname());
+        assertEquals(UserRoleEnum.CUSTOMER, customer.getRoleName());
         assertEquals(BigDecimal.valueOf(100_000), customer.getCreditLimit());
     }
 }

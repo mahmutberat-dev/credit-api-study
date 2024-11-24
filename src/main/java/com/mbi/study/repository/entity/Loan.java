@@ -16,7 +16,8 @@ import java.util.List;
 @Builder
 public class Loan extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "loan_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "loanIdGenerator")
+    @SequenceGenerator(name = "loanIdGenerator", sequenceName = "loan_id_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
     private Long id;
 

@@ -1,5 +1,6 @@
 package com.mbi.study.service;
 
+import com.mbi.study.common.UserRoleEnum;
 import com.mbi.study.controller.dto.CreateCustomerRequest;
 import com.mbi.study.repository.CustomerRepository;
 import com.mbi.study.repository.entity.Customer;
@@ -31,6 +32,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .surname(createCustomerRequest.getSurname())
                 .creditLimit(createCustomerRequest.getCreditLimit())
                 .usedCreditLimit(BigDecimal.ZERO)
+                .roleName(UserRoleEnum.CUSTOMER)
                 .loans(List.of())
                 .build();
         return customerRepository.save(customer);

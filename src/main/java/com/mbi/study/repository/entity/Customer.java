@@ -1,5 +1,6 @@
 package com.mbi.study.repository.entity;
 
+import com.mbi.study.common.UserRoleEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,7 +15,8 @@ import java.util.List;
 @Builder
 public class Customer extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customerIdGenerator")
+    @SequenceGenerator(name = "customerIdGenerator", sequenceName = "customer_id_seq", allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
     private Long id;
 
@@ -22,6 +24,8 @@ public class Customer extends BaseEntity {
     private String name;
     @Column(name = "surname")
     private String surname;
+    @Column(name = "password")
+    private String password;
     @Column(name = "credit_limit")
     private BigDecimal creditLimit;
     @Column(name = "used_credit_limit")
@@ -29,6 +33,10 @@ public class Customer extends BaseEntity {
 
     @OneToMany(mappedBy = "customer")
     private List<Loan> loans;
+
+    @Column(name = "role_name", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UserRoleEnum roleName;
 
     public boolean hasEnoughLimit(BigDecimal newCreditAmount) {
         return newCreditAmount.add(usedCreditLimit).compareTo(creditLimit) <= 0;
