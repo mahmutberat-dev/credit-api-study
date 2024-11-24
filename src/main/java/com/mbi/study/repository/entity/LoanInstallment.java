@@ -30,5 +30,5 @@ public class LoanInstallment extends BaseEntity {
 
     private Date paymentDate;
 
-    private boolean isPaid;
+    private Boolean isPaid;
 }

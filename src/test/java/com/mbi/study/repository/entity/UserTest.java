@@ -39,7 +39,7 @@ class UserTest {
         user.setUsedCreditLimit(BigDecimal.valueOf(1_000));
         user.setCreditLimit(BigDecimal.valueOf(10_000));
 
-        user.addUserCreditLimit(BigDecimal.valueOf(9_000));
+        user.addUserUsedCreditLimit(BigDecimal.valueOf(9_000));
         assertTrue(user.getUsedCreditLimit().equals(BigDecimal.valueOf(10_000)));
 
         assertFalse(user.hasEnoughLimit(BigDecimal.valueOf(1)));

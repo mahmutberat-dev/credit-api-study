@@ -45,11 +45,15 @@ public class User extends BaseEntity implements LoanAppUser {
         return usedCreditLimit.add(newCreditAmount).compareTo(creditLimit) <= 0;
     }
 
-    public void addUserCreditLimit(BigDecimal totalLoanAmount) {
+    public void addUserUsedCreditLimit(BigDecimal totalLoanAmount) {
         BigDecimal newUsedLimit = getUsedCreditLimit().add(totalLoanAmount);
         setUsedCreditLimit(newUsedLimit);
     }
 
+    public void addUserCreditLimit(BigDecimal additionalCreditLimit) {
+        BigDecimal newLimit = getCreditLimit().add(additionalCreditLimit);
+        setCreditLimit(newLimit);
+    }
 
     @Override
     public long getUserId() {

@@ -26,7 +26,6 @@ public class JWTUtil {
     @Value("${app.security.jwt.expiration-time-millis}")
     private long jwtExpirationTimeAsMillis;
 
-
     public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -48,15 +47,11 @@ public class JWTUtil {
         return buildToken(Map.of("USER_TYPE", userRoleEnum.getValue()), userDetails, jwtExpirationTimeAsMillis);
     }
 
-    public long getExpirationTime() {
-        return jwtExpirationTimeAsMillis;
-    }
-
     private String buildToken(Map<String, Object> extraClaims, LoanAppUser loanAppUser, long expiration) {
         return Jwts
                 .builder()
                 .claims(extraClaims)
-                .subject(String.valueOf(loanAppUser.getUserId()))
+                .subject(String.valueOf(loanAppUser.getUserName()))
                 .issuedAt(Date.from(Instant.now()))
                 .expiration(Date.from(Instant.now().plus(expiration, java.time.temporal.ChronoUnit.SECONDS)))
                 .signWith(getSignInKey())
@@ -64,7 +59,7 @@ public class JWTUtil {
     }
 
     public boolean isTokenValid(String token, LoanAppUser loanAppUser) {
-        return (extractUserId(token).equals(loanAppUser.getUserId())) && !isTokenExpired(token);
+        return (extractUsername(token).equals(loanAppUser.getUserName())) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {

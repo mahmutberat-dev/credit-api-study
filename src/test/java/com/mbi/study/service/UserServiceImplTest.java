@@ -84,12 +84,12 @@ class UserServiceImplTest {
     }
 
     @Test
-    void shouldUpdateUsedCreditLimit() {
+    void shouldAddUsedCreditLimit() {
         User user = User.builder().id(1001L).name("John").surname("Sir").creditLimit(BigDecimal.ZERO).usedCreditLimit(BigDecimal.ZERO).build();
         BigDecimal totalLoanAmount = BigDecimal.valueOf(50000);
         when(userRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
 
-        User result = userService.updateUsedCreditLimit(user, totalLoanAmount);
+        User result = userService.addUsedCreditLimit(user, totalLoanAmount);
 
         assertEquals(result.getUsedCreditLimit(), totalLoanAmount);
     }

@@ -5,6 +5,7 @@ import com.mbi.study.service.LoanService;
 import com.mbi.study.service.LoanInstallmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class LoanController {
     private final LoanInstallmentService loanInstallmentService;
 
     @PostMapping
+    @PreAuthorize("#createCreditLoanRequest.customerId() == authentication.principal.id or hasRole('ADMIN')")
     public CreateLoanResponse createLoan(@Valid @RequestBody CreateCreditLoanRequest createCreditLoanRequest) {
         return loanService.create(createCreditLoanRequest);
     }
@@ -28,8 +30,9 @@ public class LoanController {
     }
 
     @GetMapping()
-    public List<LoanResponse> getCustomerLoans(GetAllCustomerLoanRequest allCustomerLoanRequest) {
-        return loanService.getLoans(allCustomerLoanRequest);
+    @PreAuthorize("#customerId == authentication.principal.id or hasRole('ADMIN')")
+    public List<LoanResponse> getCustomerLoansById(@RequestParam Long customerId) {
+        return loanService.getLoans(new GetAllCustomerLoanRequest(customerId, 0, false));
     }
 
     @GetMapping("/{loanId}")

@@ -1,11 +1,11 @@
 package com.mbi.study.common.mapper;
 
-import com.mbi.study.controller.dto.CustomerResponse;
+import com.mbi.study.controller.dto.UserResponse;
 import com.mbi.study.repository.entity.User;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
-public interface CustomerMapper {
+public interface UserMapper {
 
-    CustomerResponse toLoanResponse(User entity);
+    UserResponse toUserResponse(User entity);
 }

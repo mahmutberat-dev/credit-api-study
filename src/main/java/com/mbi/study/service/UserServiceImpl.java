@@ -1,6 +1,7 @@
 package com.mbi.study.service;
 
 import com.mbi.study.controller.dto.CreateUserRequest;
+import com.mbi.study.controller.dto.UpdateCreditLimitRequest;
 import com.mbi.study.repository.UserRepository;
 import com.mbi.study.repository.entity.User;
 import jakarta.persistence.EntityExistsException;
@@ -44,14 +45,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUsedCreditLimit(User user, BigDecimal totalLoanAmount) {
-        user.addUserCreditLimit(totalLoanAmount);
+    public User updateCreditLimit(UpdateCreditLimitRequest updateCreditLimitRequest) {
+        User user = getById(updateCreditLimitRequest.customerId());
+        user.addUserCreditLimit(BigDecimal.valueOf(updateCreditLimitRequest.additionalCreditLimit()));
+        return userRepository.save(user);
+    }
+
+    @Override
+    public User addUsedCreditLimit(User user, BigDecimal totalLoanAmount) {
+        user.addUserUsedCreditLimit(totalLoanAmount);
         return userRepository.save(user);
     }
 
     @Override
     public User freeUsedCreditLimit(User user, BigDecimal totalLoanAmount) {
-        user.addUserCreditLimit(totalLoanAmount);
+        user.addUserUsedCreditLimit(totalLoanAmount);
         return userRepository.save(user);
     }
 

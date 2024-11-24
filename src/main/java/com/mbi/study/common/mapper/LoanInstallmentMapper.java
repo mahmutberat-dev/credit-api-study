@@ -5,7 +5,7 @@ import com.mbi.study.repository.entity.LoanInstallment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = {CustomerMapper.class, LoanMapper.class})
+@Mapper(componentModel = "spring", uses = {UserMapper.class, LoanMapper.class})
 public interface LoanInstallmentMapper {
 
     @Mapping(target = "loanId", source = "loanInstallment.loan.id")

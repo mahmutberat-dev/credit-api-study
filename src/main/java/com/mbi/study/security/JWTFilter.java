@@ -1,6 +1,5 @@
 package com.mbi.study.security;
 
-import com.mbi.study.common.UserRoleEnum;
 import com.mbi.study.common.exception.AuthorizationTokenException;
 import com.mbi.study.repository.entity.User;
 import com.mbi.study.service.UserService;
@@ -46,9 +45,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
     private void validateToken(String authorizationToken) {
         final String jwt = authorizationToken.substring(7);
-        final String idFromJWT = jwtUtil.extractUserId(jwt);
         final String userNameJWT = jwtUtil.extractUsername(jwt);
-        final UserRoleEnum userRole = jwtUtil.extractUserType(jwt);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             User user = userService.getByUserName(userNameJWT);
@@ -64,7 +61,7 @@ public class JWTFilter extends OncePerRequestFilter {
             }
 
         } else {
-            throw new AuthorizationTokenException(String.format("Undefined user role in JWT token: %s", userRole));
+            throw new AuthorizationTokenException("Cannot validate user token");
         }
     }
 }

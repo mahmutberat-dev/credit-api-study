@@ -10,5 +10,5 @@ public record LoanResponse(Long loanId,
                            BigDecimal loanAmount,
                            int numberOfInstallment,
                            Date createdDate,
-                           boolean isPaid) {
+                           Boolean isPaid) {
 }

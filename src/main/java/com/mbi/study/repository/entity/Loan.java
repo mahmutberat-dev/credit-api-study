@@ -33,5 +33,5 @@ public class Loan extends BaseEntity {
 
     private int numberOfInstallment;
 
-    private boolean isPaid;
+    private Boolean isPaid;
 }

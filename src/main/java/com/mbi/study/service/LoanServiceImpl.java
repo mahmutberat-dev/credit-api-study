@@ -5,9 +5,9 @@ import com.mbi.study.common.mapper.LoanMapper;
 import com.mbi.study.controller.dto.*;
 import com.mbi.study.repository.LoanInstallmentRepository;
 import com.mbi.study.repository.LoanRepository;
-import com.mbi.study.repository.entity.User;
 import com.mbi.study.repository.entity.Loan;
 import com.mbi.study.repository.entity.LoanInstallment;
+import com.mbi.study.repository.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +52,7 @@ public class LoanServiceImpl implements LoanService {
         loan.setNumberOfInstallment(installments.size());
         Loan savedLoan = saveLoan(loan);
 
-        userService.updateUsedCreditLimit(user, totalLoanAmount);
+        userService.addUsedCreditLimit(user, totalLoanAmount);
 
         BigDecimal monthlyInstallmentAmount = installments.stream().findAny().map(LoanInstallment::getAmount).orElse(BigDecimal.ZERO);
 
@@ -68,7 +68,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private static BigDecimal calculateMonthlyPaymentAmount(CreateCreditLoanRequest createCreditLoanRequest, BigDecimal totalLoanAmount) {
-        return totalLoanAmount.divide(BigDecimal.valueOf(createCreditLoanRequest.numberOfInstallments()), 2, RoundingMode.HALF_UP);
+        return totalLoanAmount.divide(BigDecimal.valueOf(createCreditLoanRequest.numberOfInstallments()), 2, RoundingMode.FLOOR);
     }
 
     private List<LoanInstallment> createInstallments(Loan loan, BigDecimal totalLoanAmount, CreateCreditLoanRequest createCreditLoanRequest) {
@@ -126,11 +126,11 @@ public class LoanServiceImpl implements LoanService {
         PayInstallmentDTO payInstallmentDTO = payInstallments(loan, validateLoanFactor);
 
         if (isAllLoanInstallmentsArePaid(payInstallmentDTO.loanInstallments())) {
-            loan.setPaid(true);
+            loan.setIsPaid(Boolean.TRUE);
             saveLoan(loan);
             // customerService.freeUsedCreditLimit(customer, loan.getLoanAmount()); // TODO shall the usedCreditLimit be updated?
         }
-        return new PayLoanResponse(validateLoanFactor, payInstallmentDTO.paidAmount, loan.isPaid());
+        return new PayLoanResponse(validateLoanFactor, payInstallmentDTO.paidAmount, loan.getIsPaid());
     }
 
     private Loan saveLoan(Loan loan) {
@@ -142,11 +142,11 @@ public class LoanServiceImpl implements LoanService {
         BigDecimal paidAmount = BigDecimal.ZERO;
 
         List<LoanInstallment> loanInstallments = loan.getInstallments().stream()
-                .filter(loanInstallment -> !loanInstallment.isPaid()).toList();
+                .filter(loanInstallment -> !loanInstallment.getIsPaid()).toList();
         for (int installmentIndex = 0; installmentIndex < validateLoanFactor; installmentIndex++) {
             if (installmentIndex < loanInstallments.size()) {
                 LoanInstallment loanInstallment = loanInstallments.get(installmentIndex);
-                loanInstallment.setPaid(true);
+                loanInstallment.setIsPaid(Boolean.TRUE);
                 loanInstallment.setPaymentDate(currentDate);
                 if (DateUtils.isSameDay(loanInstallment.getDueDate(), currentDate)) { // same day
                     paidAmount = paidAmount.add(loanInstallment.getAmount());
@@ -167,7 +167,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private void validateLoanPayment(Loan loan, User user) {
-        if (loan.isPaid()) {
+        if (Boolean.TRUE.equals(loan.getIsPaid())) {
             throw new IllegalStateException(String.format("The Loan is already paid. Loan Id: %d", loan.getId()));
         }
         if (!loan.getUser().getId().equals(user.getId())) {
@@ -176,7 +176,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private boolean isAllLoanInstallmentsArePaid(List<LoanInstallment> loanInstallments) {
-        return loanInstallments.stream().filter(loanInstallment -> !loanInstallment.isPaid()).findAny().isEmpty();
+        return loanInstallments.stream().filter(loanInstallment -> !loanInstallment.getIsPaid()).findAny().isEmpty();
     }
 
     private int validateLoanAmount(PayLoanRequest payLoanRequest, BigDecimal monthlyInstallmentAmount) {

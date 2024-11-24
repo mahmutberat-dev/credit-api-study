@@ -4,10 +4,10 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 public record LoanInstallmentResponse(Long loanId,
-                                      Long installmentId,
+                                      Long id,
                                       BigDecimal amount,
                                       BigDecimal paidAmount,
                                       Date nextPaymentDate,
                                       Date paymentDate,
-                                      int remainingInstallments) {
+                                      Boolean isPaid) {
 }
