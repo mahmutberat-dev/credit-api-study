@@ -1,4 +1,4 @@
-# Credit Loan App
+# Credit Loan Backend Service
 
 This repository provides a Credit Management API to allow both Administrator and End Users to perform basic loan
 functionalities such as create, update and retrieve a loan.
@@ -28,7 +28,7 @@ functionalities such as create, update and retrieve a loan.
 ./gradlew bootJar && java -jar build/libs/study-0.0.1-SNAPSHOT.jar
 ```
 
-- To running tests
+- To run tests
 
 ```bash
 ./gradlew clean test
